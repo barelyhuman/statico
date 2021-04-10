@@ -205,8 +205,6 @@ func readConfig() error {
 		return err
 	}
 
-	fmt.Println(ConfigRef)
-
 	return nil
 }
 
