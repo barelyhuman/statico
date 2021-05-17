@@ -120,7 +120,7 @@ func main() {
 	// Convert the given content source from config into markdown/compiled HTML files
 	err = convertDirectoryToMarkdown(ConfigRef.ContentPath)
 	if err != nil {
-		log.Fatal("Failed to convert directory, Error: ", err)
+		log.Fatalf("Failed to convert directory/file at path %v, Error: %v \n", ConfigRef.ContentPath, err)
 	}
 
 	// Create a blog index file and write contents to it
@@ -288,12 +288,15 @@ func convertDirectoryToMarkdown(srcFolder string) error {
 
 	files, err := ioutil.ReadDir(pathPrefix)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	for _, file := range files {
 		if file.IsDir() {
-			convertDirectoryToMarkdown(file.Name())
+			err := convertDirectoryToMarkdown(file.Name())
+			if err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -362,10 +365,7 @@ func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.
 // isMarkdownWithFrontMatter - check if the markdown file has any frontmatter
 func isMarkdownWithFrontMatter(fileData []byte) bool {
 	parts := bytes.SplitN(fileData, []byte("---"), 3)
-	if len(parts) != 3 {
-		return false
-	}
-	return true
+	return len(parts) == 3
 }
 
 //  handleOtherFile - handle files that are not html templates or blog (with frontmatter)
@@ -409,7 +409,7 @@ func handleMarkdownFile(file os.FileInfo, fileData []byte, outPathPrefix string)
 	err := yaml.Unmarshal(parts[1], &metadata)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to covert frontmatter of file:%v with error: %v \n", file.Name(), err)
 	}
 
 	if metadata.Published {
