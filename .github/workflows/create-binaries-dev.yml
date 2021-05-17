@@ -10,9 +10,6 @@ jobs:
     name: Pre Release
     runs-on: ubuntu-latest
     steps:
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Checkout the repository
         uses: actions/checkout@v2
         with:
