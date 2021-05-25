@@ -61,6 +61,11 @@ func (t Date) MarshalYAML() (interface{}, error) {
 
 // FormattedDate - return a standardised date as string to
 // be used into templates
-func (t Date) FormattedDate() string {
+func (t Date) FormattedDateTime() string {
 	return t.Time.Format(time.RFC822)
+}
+
+// Format - return a string date in the requested format layout (compatible with Time.Format Layouts)
+func (t Date) Format(format string) string {
+	return t.Time.Format(format)
 }

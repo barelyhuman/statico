@@ -18,14 +18,29 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type Site struct {
+	Name        string `yaml:"name"`
+	Link        string `yaml:"link"`
+	Description string `yaml:"description"`
+}
+
 type Config struct {
-	ContentPath   string `yaml:"content_path"`
-	TemplatesPath string `yaml:"templates_path"`
-	OutPath       string `yaml:"out_path"`
-	PublicFolder  string `yaml:"public_folder"`
-	PostIndexPath string `yaml:"post_index_path"`
-	GenerateRss   bool   `yaml:"generate_rss"`
-	RssOutPath    string `yaml:"rss_out_path"`
+	Site          Site `yaml:"site"`
+	TemplateNames struct {
+		PostTemplateName      string `yaml:"post_template"`
+		PostIndexTemplateName string `yaml:"post_index_template"`
+		PageTemplateName      string `yaml:"page_template"`
+		RSSTemplateName       string `yaml:"rss_template"`
+	} `yaml:"template_names"`
+
+	ContentPath    string   `yaml:"content_path"`
+	TemplatesPath  string   `yaml:"templates_path"`
+	OutPath        string   `yaml:"out_path"`
+	PublicFolder   string   `yaml:"public_folder"`
+	PostIndexPath  string   `yaml:"post_index_path"`
+	IndexedFolders []string `yaml:"indexed_folders"`
+	GenerateRss    bool     `yaml:"generate_rss"`
+	RssOutPath     string   `yaml:"rss_out_path"`
 }
 
 type Metadata struct {
@@ -34,19 +49,22 @@ type Metadata struct {
 	Date      Date   `yaml:"date"`
 	Slug      string
 	Content   string
+	OutPath   string
 }
 
 // Post - container for both metadata and the content of the post
 // used to differentiate between a post and just metadata as part of
 // other items that might need metadata
 type Post struct {
+	Site    Site
 	Meta    Metadata
 	Content string
 }
 
 // BlogIndex , used for storing metadata indexes for creatings a blog index
 // responsible for the /posts url to show a list of all available posts
-type BlogIndex struct {
+type IndexedFiles struct {
+	Site  Site
 	Files []Metadata
 }
 
@@ -68,10 +86,10 @@ type ATOMFeed struct {
 }
 
 var (
-	markdownProcessor goldmark.Markdown
-	parsedTemplates   *template.Template
-	filesForIndex     []Metadata
-	ConfigRef         *Config
+	markdownProcessor   goldmark.Markdown
+	parsedTemplates     *template.Template
+	allFilesForIndexing []Metadata
+	ConfigRef           *Config
 )
 
 const configFile = "./config.yml"
@@ -80,7 +98,7 @@ func main() {
 	ConfigRef = &Config{}
 	err := readConfig()
 	if err != nil {
-		log.Fatal("Error reading config", err)
+		log.Fatal("Error reading config: ", err)
 	}
 
 	// Clean existing out directory
@@ -123,27 +141,35 @@ func main() {
 		log.Fatalf("Failed to convert directory/file at path %v, Error: %v \n", ConfigRef.ContentPath, err)
 	}
 
-	// Create a blog index file and write contents to it
-	// using the existing blog index template
-	blogIndexFile, err := os.Create(ConfigRef.PostIndexPath)
+	// Generate Index files
+	for _, indexPath := range ConfigRef.IndexedFolders {
+		indexFile, err := os.Create(ConfigRef.OutPath + "/" + indexPath + "/index.html")
+		var filesToIndex []Metadata
 
-	if err != nil {
-		log.Fatal("Failed to create blog index, Error: ", err)
+		if err != nil {
+			log.Fatalf("failed to compile index file in folder %v,Error: %v \n ", indexPath, err)
+		}
+
+		defer indexFile.Close()
+
+		for _, file := range allFilesForIndexing {
+			if file.OutPath == indexPath {
+				filesToIndex = append(filesToIndex, file)
+			}
+		}
+
+		sort.Slice(filesToIndex, func(i, j int) bool {
+			return filesToIndex[j].Date.Time.Before(filesToIndex[i].Date.Time)
+		})
+
+		err = parsedTemplates.ExecuteTemplate(indexFile, ConfigRef.TemplateNames.PostIndexTemplateName, IndexedFiles{Site: ConfigRef.Site, Files: filesToIndex})
+
+		if err != nil {
+			log.Fatalf("failed to compile index file template for folder %v,Error: %v \n ", indexPath, err)
+		}
+
+		indexFile.Sync()
 	}
-
-	defer blogIndexFile.Close()
-
-	sort.Slice(filesForIndex, func(i, j int) bool {
-		return filesForIndex[j].Date.Time.Before(filesForIndex[i].Date.Time)
-	})
-
-	err = parsedTemplates.ExecuteTemplate(blogIndexFile, "blogIndexHTML", BlogIndex{Files: filesForIndex})
-
-	if err != nil {
-		log.Fatal("Failed to compiel blogIndexHTML,Error:", err)
-	}
-
-	blogIndexFile.Sync()
 
 	// Generate the rss feed if the config variable is set to true
 	if ConfigRef.GenerateRss {
@@ -154,12 +180,12 @@ func main() {
 			Link        string
 			Description string
 		}{
-			Name:        "Reaper",
-			Link:        "https://reaper.im",
-			Description: "stories, rants, and development",
+			Name:        ConfigRef.Site.Name,
+			Link:        ConfigRef.Site.Link,
+			Description: ConfigRef.Site.Description,
 		}
 
-		for _, fileIndex := range filesForIndex {
+		for _, fileIndex := range allFilesForIndexing {
 			feed.Posts = append(feed.Posts,
 				struct {
 					Slug    string
@@ -183,7 +209,7 @@ func main() {
 		}
 		defer rssWriter.Close()
 
-		err = parsedTemplates.ExecuteTemplate(rssWriter, "rssTemplate", feed)
+		err = parsedTemplates.ExecuteTemplate(rssWriter, ConfigRef.TemplateNames.RSSTemplateName, feed)
 
 		if err != nil {
 			log.Fatal(err)
@@ -223,11 +249,12 @@ func writeToBlog(fileNameHTML string, metadata Metadata) {
 	defer fileToWrite.Close()
 
 	post := Post{
+		Site:    ConfigRef.Site,
 		Meta:    metadata,
 		Content: metadata.Content,
 	}
 
-	err = parsedTemplates.ExecuteTemplate(fileToWrite, "blogPostHTML", post)
+	err = parsedTemplates.ExecuteTemplate(fileToWrite, ConfigRef.TemplateNames.PostTemplateName, post)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -251,11 +278,12 @@ func writeToPage(fileNameHTML string, content []byte, metadata Metadata) {
 	}
 
 	post := Post{
+		Site:    ConfigRef.Site,
 		Meta:    metadata,
-		Content: string(toHTML.Bytes()),
+		Content: toHTML.String(),
 	}
 
-	err = parsedTemplates.ExecuteTemplate(fileToWrite, "simplePageHTML", post)
+	err = parsedTemplates.ExecuteTemplate(fileToWrite, ConfigRef.TemplateNames.PageTemplateName, post)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -283,7 +311,7 @@ func convertDirectoryToMarkdown(srcFolder string) error {
 	}
 
 	if !info.IsDir() {
-		return fmt.Errorf("Given source is not a directory")
+		return fmt.Errorf("given source is not a directory")
 	}
 
 	files, err := ioutil.ReadDir(pathPrefix)
@@ -406,10 +434,14 @@ func handleMarkdownFile(file os.FileInfo, fileData []byte, outPathPrefix string)
 		return nil
 	}
 
+	if isInSlice(ConfigRef.IndexedFolders, outPathPrefix) {
+		metadata.OutPath = outPathPrefix
+	}
+
 	err := yaml.Unmarshal(parts[1], &metadata)
 
 	if err != nil {
-		return fmt.Errorf("failed to covert frontmatter of file:%v with error: %v \n", file.Name(), err)
+		return fmt.Errorf("failed to covert frontmatter of file:%v with error: %v \n ", file.Name(), err)
 	}
 
 	if metadata.Published {
@@ -421,7 +453,7 @@ func handleMarkdownFile(file os.FileInfo, fileData []byte, outPathPrefix string)
 		}
 
 		metadata.Content = toHTML.String()
-		filesForIndex = append(filesForIndex, metadata)
+		allFilesForIndexing = append(allFilesForIndexing, metadata)
 		writeToBlog(outPathPrefix+"/"+fileNameHTML, metadata)
 	}
 	return nil
@@ -449,4 +481,13 @@ func toTitleCase(toConv string) string {
 		)
 	}
 	return strings.Join(result, " ")
+}
+
+func isInSlice(sliceToCheck []string, toSearch string) bool {
+	for _, item := range sliceToCheck {
+		if item == toSearch {
+			return true
+		}
+	}
+	return false
 }

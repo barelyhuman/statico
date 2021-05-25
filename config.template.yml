@@ -5,3 +5,6 @@ public_folder: "./public"
 post_index_path: "./out/posts/index.html"
 generate_rss: true
 rss_out_path: "./out/blog.xml"
+indexed_folders: 
+  - posts
+  - devlogs
