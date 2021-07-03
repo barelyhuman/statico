@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -94,15 +95,39 @@ var (
 
 const configFile = "./config.yml"
 
+var termColors = &TermColors{}
+
 func main() {
+	termColors.Init()
+	enableWatch := flag.Bool("watch", false, "")
+
+	flag.Parse()
+
 	ConfigRef = &Config{}
 	err := readConfig()
 	if err != nil {
 		log.Fatal("Error reading config: ", err)
 	}
 
+	Statico()
+
+	if *enableWatch {
+		WatchFiles()
+	}
+}
+
+func Success(text string) string {
+	return termColors.Bold(termColors.Green(text))
+}
+
+func Bullet(text string) string {
+	return termColors.Reset(termColors.Bold(text))
+}
+
+// Statico - static file and index generator
+func Statico() {
 	// Clean existing out directory
-	err = os.RemoveAll(ConfigRef.OutPath)
+	err := os.RemoveAll(ConfigRef.OutPath)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -218,6 +243,9 @@ func main() {
 		rssWriter.Sync()
 	}
 
+	fmt.Println(
+		Success("Static Files Generated to : ") + Bullet(ConfigRef.OutPath),
+	)
 }
 
 func readConfig() error {
@@ -373,7 +401,7 @@ func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.
 	}
 
 	if !isMarkdownFile(file) && !isHTMLFileBool {
-		log.Println("Skipping file, not a markdown file", file.Name())
+		fmt.Println(termColors.Dim("Skipping file, not a markdown file:"), termColors.Bold(file.Name()))
 		return nil
 	}
 
