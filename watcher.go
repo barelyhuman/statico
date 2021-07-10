@@ -22,6 +22,14 @@ func WatchFiles() error {
 		return err
 	}
 
+	if err := w.AddRecursive(ConfigRef.TemplatesPath); err != nil {
+		return err
+	}
+
+	if err := w.AddRecursive(ConfigRef.PublicFolder); err != nil {
+		return err
+	}
+
 	if err := w.Start(time.Millisecond * 500); err != nil {
 		return err
 	}
