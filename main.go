@@ -126,8 +126,11 @@ func Bullet(text string) string {
 
 // Statico - static file and index generator
 func Statico() {
-	// Clean existing out directory
+	// Clean existing out directory and prefilled values
 	err := os.RemoveAll(ConfigRef.OutPath)
+	allFilesForIndexing = nil
+	markdownProcessor = nil
+	parsedTemplates = nil
 
 	if err != nil {
 		log.Fatalln(err)
