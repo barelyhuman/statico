@@ -44,13 +44,17 @@ type Config struct {
 	RssOutPath     string   `yaml:"rss_out_path"`
 }
 
+type ImageURLGen string
+
 type Metadata struct {
-	Published bool   `yaml:"published"`
-	Title     string `yaml:"title"`
-	Date      Date   `yaml:"date"`
-	Slug      string
-	Content   string
-	OutPath   string
+	Published  bool   `yaml:"published"`
+	Title      string `yaml:"title"`
+	Date       Date   `yaml:"date"`
+	ImageURL   string `yaml:"image_url"`
+	AGImageURL ImageURLGen
+	Slug       string
+	Content    string
+	OutPath    string
 }
 
 // Post - container for both metadata and the content of the post
@@ -484,6 +488,11 @@ func handleMarkdownFile(file os.FileInfo, fileData []byte, outPathPrefix string)
 		}
 
 		metadata.Content = toHTML.String()
+
+		if len(metadata.ImageURL) <= 0 {
+			metadata.AGImageURL = ImageURLGen("https://og.reaper.im/api?title=" + metadata.Title + "&fontSize=8&subtitle=at " + ConfigRef.Site.Link)
+		}
+
 		allFilesForIndexing = append(allFilesForIndexing, metadata)
 		writeToBlog(outPathPrefix+"/"+fileNameHTML, metadata)
 	}
