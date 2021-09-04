@@ -1,5 +1,5 @@
 <h1 align="center">Statico</h1>
-<p align="center">A Markdown Based Static Site Generator</p>
+<p align="center">A static site generator for creative devs</p>
 
 If you like any of my work, you can support me on: https://barelyhuman.dev/donate
 
