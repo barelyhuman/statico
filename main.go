@@ -12,6 +12,8 @@ import (
 	"text/template"
 	"time"
 
+	"net/http"
+
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -42,6 +44,7 @@ type Config struct {
 	IndexedFolders []string `yaml:"indexed_folders"`
 	GenerateRss    bool     `yaml:"generate_rss"`
 	RssOutPath     string   `yaml:"rss_out_path"`
+	Port           string   `yaml:"port"`
 }
 
 type ImageURLGen string
@@ -103,7 +106,10 @@ var termColors = &TermColors{}
 
 func main() {
 	termColors.Init()
-	enableWatch := flag.Bool("watch", false, "")
+	enableWatch := flag.Bool("watch", false, "Start statico in watch mode")
+	enableWatchAlias := flag.Bool("w", false, "alias `-watch`")
+	enableServe := flag.Bool("serve", false, "Enable file server")
+	enableServeAlias := flag.Bool("s", false, "alias `-serve`")
 
 	flag.Parse()
 
@@ -115,9 +121,17 @@ func main() {
 
 	Statico()
 
-	if *enableWatch {
-		WatchFiles()
+	waitForKill := make(chan int)
+
+	if *enableWatch || *enableWatchAlias {
+		go WatchFiles()
 	}
+
+	if *enableServe || *enableServeAlias {
+		go ServeFiles()
+	}
+
+	<-waitForKill
 }
 
 func Success(text string) string {
@@ -530,4 +544,21 @@ func isInSlice(sliceToCheck []string, toSearch string) bool {
 		}
 	}
 	return false
+}
+
+func ServeFiles() {
+	fs := http.FileServer(http.Dir(ConfigRef.OutPath))
+	http.Handle("/", fs)
+
+	port := "3000"
+
+	if len(ConfigRef.Port) > 0 {
+		port = ConfigRef.Port
+	}
+
+	log.Println("Listening on :" + port + "...")
+	err := http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

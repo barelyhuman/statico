@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"time"
 
 	"github.com/radovskyb/watcher"
@@ -41,6 +42,7 @@ func handleFileChanges(w *watcher.Watcher) error {
 	for {
 		select {
 		case <-w.Event:
+			log.Println("Changed ...")
 			Statico()
 		case err := <-w.Error:
 			return err
