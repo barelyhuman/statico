@@ -13,6 +13,7 @@ I use markdown for most of my writing and really like the simplicity. This start
 
 - Supports Templates (Go Templates)
 - Watch Mode
+- Local server
 - ⚡ Fast
 - Markdown => HTML
 
@@ -26,15 +27,17 @@ I use markdown for most of my writing and really like the simplicity. This start
 $ statico [flags]
 
 Usage of statico:
-  -watch Run in watch mode
-  -h show this list
+  -s -serve
+        alias -serve
+  -serve
+        Enable file server
+  -w -watch
+        alias -watch
+  -watch
+        Start statico in watch mode
 ```
 
-The cli has just 2 functions,
-
-1. To convert the given folder of markdown into html based on the given templates and has no default templates, you can use [barelyhuman.dev](https://github.com/barelyhuman.dev) as a base if you don't want to write your own templates.
-
-2. To do the same as above but with a watcher, so it can monitor changes for you.
+To convert the given folder of markdown into html based on the given templates and has no default templates, you can use [barelyhuman.dev](https://github.com/barelyhuman.dev) as a base if you don't want to write your own templates.
 
 The tool needs a `config.yml` and you can find a template in this repository [`config.template.yml`](/config.template.yml)
 
