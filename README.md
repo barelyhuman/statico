@@ -37,7 +37,12 @@ Usage of statico:
         Start statico in watch mode
 ```
 
-To convert the given folder of markdown into html based on the given templates and has no default templates, you can use [barelyhuman.dev](https://github.com/barelyhuman.dev) as a base if you don't want to write your own templates.
+**statico** doesn't come with any necessary boilerplate and just injects a few variables into the provided templates using a `.config.yml` file. 
+You can either use the [default template](https://github.com/barelyhuman/statico-default-template/) or make your own with inspirations and hacking the following available templates 
+
+- [Default](https://github.com/barelyhuman/statico-default-template/)
+- [reaper.im](https://github.com/barelyhuman/reaper.im)
+- [barelyhuman.dev](https://github.com/barelyhuman/barelyhuman.dev)
 
 The tool needs a `config.yml` and you can find a template in this repository [`config.template.yml`](/config.template.yml)
 
