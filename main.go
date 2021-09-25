@@ -100,21 +100,32 @@ var (
 	ConfigRef           *Config
 )
 
-const configFile = "./config.yml"
-
 var termColors = &TermColors{}
 
 func main() {
+	var configFile string
 	termColors.Init()
 	enableWatch := flag.Bool("watch", false, "Start statico in watch mode")
 	enableWatchAlias := flag.Bool("w", false, "alias `-watch`")
 	enableServe := flag.Bool("serve", false, "Enable file server")
 	enableServeAlias := flag.Bool("s", false, "alias `-serve`")
+	configFileFlag := flag.String("config", "", "Config file to use")
+	configFileFlagAlias := flag.String("c", "", "alias `-config`")
 
 	flag.Parse()
 
+	configFile = "./config.yml"
+
+	if len(*configFileFlag) > 0 {
+		configFile = *configFileFlag
+	}
+
+	if len(*configFileFlagAlias) > 0 {
+		configFile = *configFileFlagAlias
+	}
+
 	ConfigRef = &Config{}
-	err := readConfig()
+	err := ConfigRef.readConfig(configFile)
 	if err != nil {
 		log.Fatal("Error reading config: ", err)
 	}
@@ -269,13 +280,13 @@ func Statico() {
 	)
 }
 
-func readConfig() error {
-	file, err := ioutil.ReadFile(configFile)
+func (cfg *Config) readConfig(configFilePath string) error {
+	file, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return err
 	}
 
-	err = yaml.Unmarshal([]byte(file), &ConfigRef)
+	err = yaml.Unmarshal([]byte(file), &cfg)
 	if err != nil {
 		return err
 	}
