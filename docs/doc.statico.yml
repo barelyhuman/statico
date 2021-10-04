@@ -1,0 +1,17 @@
+site:
+  name: Statico
+  link: https://statico.reaper.im
+  description: Static Site Generator for Markdown
+
+template_names:
+  post_template: "docPageHTML"
+  post_index_template: "pageIndexHTML"
+  page_template: "simplePageHTML"
+  rss_template: "rssTemplate"
+
+content_path: "./contents"
+templates_path: "./templates"
+out_path: "./out"
+public_folder: "./public"
+indexed_folders:
+  - docs
