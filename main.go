@@ -132,17 +132,20 @@ func main() {
 
 	Statico()
 
-	waitForKill := make(chan int)
+	if *enableWatch || *enableWatchAlias || *enableServe || *enableServeAlias {
+		waitForKill := make(chan int)
 
-	if *enableWatch || *enableWatchAlias {
-		go WatchFiles()
+		if *enableWatch || *enableWatchAlias {
+			go WatchFiles()
+		}
+
+		if *enableServe || *enableServeAlias {
+			go ServeFiles()
+		}
+
+		<-waitForKill
 	}
 
-	if *enableServe || *enableServeAlias {
-		go ServeFiles()
-	}
-
-	<-waitForKill
 }
 
 func Success(text string) string {
