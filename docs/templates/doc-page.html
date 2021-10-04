@@ -1,0 +1,54 @@
+{{define "docPageHTML"}}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content='{{print .Site.Link "/" .Meta.Slug}}' />
+    <meta property="og:title" content="{{.Meta.Title}}" />
+    <meta
+      property="og:image"
+      content="{{or .Meta.ImageURL .Meta.AGImageURL}}"
+    />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="{{print .Site.Name .Meta.Slug}}" />
+    <meta property="twitter:title" content="{{.Meta.Title}}" />
+    <meta
+      property="twitter:image"
+      content="{{or .Meta.ImageURL .Meta.AGImageURL}}"
+    />
+    <meta name="title" content="{{.Meta.Title}}" />
+    <title>{{.Meta.Title}}</title>
+    <link rel="stylesheet" href="../styles/main.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/styles/nord.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/highlight.min.js"></script>
+    <!-- and it's easy to individually load additional languages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.2.0/languages/go.min.js"></script>
+  </head>
+  <body>
+    {{template "headerHTML" .}}
+    <section class="flex container-boundaries container">
+      <section class="mw-150-px flex flex-col m-1 mt-2 b-r-1">
+        {{template "navigationHTML" .}}
+      </section>
+      <main class="ml-2">
+        <h1>{{.Meta.Title}}</h1>
+        <article>{{.Content}}</article>
+      </main>
+    </section>
+    {{template "footerHTML" .}}
+  </body>
+</html>
+{{end}}

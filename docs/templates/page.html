@@ -1,0 +1,25 @@
+{{define "simplePageHTML"}}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    {{template "metaHTML" .}}
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{.Site.Name}} | {{.Meta.Title}}</title>
+    <link rel="stylesheet" href="../styles/main.css" />
+    <link rel="stylesheet" href="../styles/extras.css" />
+  </head>
+  <body>
+    {{template "headerHTML" .}}
+    <section class="flex container-boundaries container">
+      <section class="mw-150-px flex flex-col m-1 mt-2 b-r-1">
+        {{template "navigationHTML" .}}
+      </section>
+      <main class="ml-2">{{.Content}}</main>
+    </section>
+    {{template "footerHTML" .}}
+  </body>
+</html>
+{{end}}
