@@ -5,7 +5,7 @@ published: true
 
 ## Install
 
-- You can download the binaries from the [releases](/releases) page for your specific system and add it to a directory that is in your `PATH` variables.
+- You can download the binaries from the [releases](https://github.com/barelyhuman/statico/releases) page for your specific system and add it to a directory that is in your `PATH` variables.
 
 ## Usage
 
