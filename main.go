@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -58,6 +59,22 @@ type Metadata struct {
 	Slug       string
 	Content    string
 	OutPath    string
+	NextMeta   *Metadata
+	PrevMeta   *Metadata
+}
+
+func (m Metadata) GetNextMeta() Metadata {
+	if m.NextMeta != nil {
+		return *m.NextMeta
+	}
+	return Metadata{}
+}
+
+func (m Metadata) GetPrevMeta() Metadata {
+	if m.PrevMeta != nil {
+		return *m.PrevMeta
+	}
+	return Metadata{}
 }
 
 // Post - container for both metadata and the content of the post
@@ -382,7 +399,8 @@ func convertDirectoryToMarkdown(srcFolder string) error {
 		return err
 	}
 
-	for _, file := range files {
+	var prevMeta *Metadata
+	for index, file := range files {
 		if file.IsDir() {
 			err := convertDirectoryToMarkdown(file.Name())
 			if err != nil {
@@ -391,10 +409,28 @@ func convertDirectoryToMarkdown(srcFolder string) error {
 			continue
 		}
 
-		err := handleUnprocessedTemplate(pathPrefix, outPathPrefix, file)
+		_metadata, err := GenerateMeta(file, outPathPrefix, pathPrefix)
 		if err != nil {
 			return err
 		}
+		metadata := &_metadata
+		metadata.PrevMeta = prevMeta
+
+		if index+1 < len(files) && !files[index+1].IsDir() {
+			nextFileMeta, err := GenerateMeta(files[index+1], outPathPrefix, pathPrefix)
+			if err != nil {
+				return err
+			}
+			metadata.NextMeta = &nextFileMeta
+		}
+
+		err = handleUnprocessedTemplate(pathPrefix, outPathPrefix, file, metadata)
+
+		if err != nil {
+			return err
+		}
+
+		prevMeta = metadata
 	}
 
 	return nil
@@ -424,7 +460,7 @@ func normalizeOtherFileTypeName(file os.FileInfo) string {
 //  by converting an Markdown file with Frontmatter into a blog file
 //  a normal markdown file into a simple html file and
 //  a html file into a dynamically compiled go html template
-func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.FileInfo) error {
+func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.FileInfo, metadata *Metadata) error {
 	var err error
 	var isHTMLFileBool = isHTMLFile(file)
 
@@ -446,9 +482,9 @@ func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.
 			return err
 		}
 	} else if isMarkdownWithFrontMatter(fileData) {
-		return handleMarkdownFile(file, fileData, outPathPrefix)
+		return handleMarkdownFile(file, fileData, outPathPrefix, metadata)
 	} else {
-		return handleOtherFile(file, fileData, outPathPrefix)
+		return handleOtherFile(file, fileData, outPathPrefix, metadata)
 	}
 	return nil
 }
@@ -461,13 +497,12 @@ func isMarkdownWithFrontMatter(fileData []byte) bool {
 
 //  handleOtherFile - handle files that are not html templates or blog (with frontmatter)
 //  based markdown and just a simple markdown file
-func handleOtherFile(file os.FileInfo, fileData []byte, outPathPrefix string) error {
-	metadata := Metadata{}
+func handleOtherFile(file os.FileInfo, fileData []byte, outPathPrefix string, metadata *Metadata) error {
 	fileNameHTML := changeFileExtension(file.Name(), ".md", ".html")
 	metadata.Slug = outPathPrefix + "/" + fileNameHTML
 	name := normalizeOtherFileTypeName(file)
 	metadata.Title = toTitleCase(name)
-	writeToPage(outPathPrefix+"/"+fileNameHTML, fileData, metadata)
+	writeToPage(outPathPrefix+"/"+fileNameHTML, fileData, *metadata)
 	return nil
 }
 
@@ -488,41 +523,11 @@ func handleHTMLFile(file os.FileInfo, fileData []byte, outPathPrefix string) err
 
 // handleMarkdownFile - specifically handle markdown files with frontmatter available
 // and pass them to compile with the blog-post styled template
-func handleMarkdownFile(file os.FileInfo, fileData []byte, outPathPrefix string) error {
-	metadata := Metadata{}
+func handleMarkdownFile(file os.FileInfo, fileData []byte, outPathPrefix string, metadata *Metadata) error {
 	fileNameHTML := changeFileExtension(file.Name(), ".md", ".html")
-	metadata.Slug = outPathPrefix + "/" + fileNameHTML
-	parts := bytes.SplitN(fileData, []byte("---"), 3)
-	if len(parts) != 3 {
-		return nil
-	}
-
-	if isInSlice(ConfigRef.IndexedFolders, outPathPrefix) {
-		metadata.OutPath = outPathPrefix
-	}
-
-	err := yaml.Unmarshal(parts[1], &metadata)
-
-	if err != nil {
-		return fmt.Errorf("failed to covert frontmatter of file:%v with error: %v \n ", file.Name(), err)
-	}
-
 	if metadata.Published {
-		var toHTML bytes.Buffer
-
-		err = markdownProcessor.Convert(parts[2], &toHTML)
-		if err != nil {
-			return err
-		}
-
-		metadata.Content = toHTML.String()
-
-		if len(metadata.ImageURL) <= 0 {
-			metadata.AGImageURL = ImageURLGen("https://og.reaper.im/api?title=" + metadata.Title + "&fontSize=8&subtitle=at " + ConfigRef.Site.Link)
-		}
-
-		allFilesForIndexing = append(allFilesForIndexing, metadata)
-		writeToBlog(outPathPrefix+"/"+fileNameHTML, metadata)
+		allFilesForIndexing = append(allFilesForIndexing, *metadata)
+		writeToBlog(outPathPrefix+"/"+fileNameHTML, *metadata)
 	}
 	return nil
 }
@@ -575,4 +580,47 @@ func ServeFiles() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// GenerateMeta - Genrate the base meta data for a generic markdown file, doesn't generate it for other files
+//  so the others are handled in their specific functions
+func GenerateMeta(file fs.FileInfo, outPathPrefix string, pathPrefix string) (Metadata, error) {
+	metadata := Metadata{}
+	fileData, err := ioutil.ReadFile(pathPrefix + "/" + file.Name())
+	if err != nil {
+		log.Fatal("Unable to read file:"+pathPrefix+"/"+file.Name()+"\n Error:", err)
+	}
+
+	fileNameHTML := changeFileExtension(file.Name(), ".md", ".html")
+	metadata.Slug = outPathPrefix + "/" + fileNameHTML
+	parts := bytes.SplitN(fileData, []byte("---"), 3)
+	if len(parts) != 3 {
+		return metadata, nil
+	}
+
+	if isInSlice(ConfigRef.IndexedFolders, outPathPrefix) {
+		metadata.OutPath = outPathPrefix
+	}
+
+	err = yaml.Unmarshal(parts[1], &metadata)
+
+	if err != nil {
+		return metadata, fmt.Errorf("failed to covert frontmatter of file:%v with error: %v \n ", file.Name(), err)
+	}
+
+	if metadata.Published {
+		var toHTML bytes.Buffer
+
+		err = markdownProcessor.Convert(parts[2], &toHTML)
+		if err != nil {
+			return metadata, err
+		}
+
+		metadata.Content = toHTML.String()
+
+		if len(metadata.ImageURL) <= 0 {
+			metadata.AGImageURL = ImageURLGen("https://og.reaper.im/api?title=" + metadata.Title + "&fontSize=8&subtitle=at " + ConfigRef.Site.Link)
+		}
+	}
+	return metadata, nil
 }

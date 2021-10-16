@@ -197,6 +197,10 @@ input.large {
   justify-content: flex-end;
 }
 
+.justify-between {
+  justify-content: space-between;
+}
+
 .flex-col {
   flex-direction: column;
 }

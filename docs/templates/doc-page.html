@@ -43,10 +43,22 @@
       <section class="mw-150-px flex flex-col m-1 mt-2 b-r-1">
         {{template "navigationHTML" .}}
       </section>
-      <main class="ml-2">
-        <h1>{{.Meta.Title}}</h1>
-        <article>{{.Content}}</article>
-      </main>
+      <section>
+        <main class="ml-2">
+          <h1>{{.Meta.Title}}</h1>
+          <article>{{.Content}}</article>
+        </main>
+        <div class="flex justify-between">
+          <!--  Prev Link -->
+          {{with .Meta.GetPrevMeta}} {{$link := (printf "/%v" .Slug)}} {{if eq
+          .Slug ""}}{{else}}<a href="{{$link}}">&#8249; {{.Title}}</a>{{end}}
+          {{end}}
+          <!--  Next Link -->
+          {{with .Meta.GetNextMeta}} {{$link := (printf "/%v" .Slug)}} {{if eq
+          .Slug ""}}{{else}}<a href="{{$link}}">{{.Title}} &#8250;</a>{{end}}
+          {{end}}
+        </div>
+      </section>
     </section>
     {{template "footerHTML" .}}
   </body>
