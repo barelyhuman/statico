@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"time"
 
 	"github.com/radovskyb/watcher"
@@ -42,7 +42,10 @@ func handleFileChanges(w *watcher.Watcher) error {
 	for {
 		select {
 		case <-w.Event:
-			log.Println("Changed ...")
+			fmt.Println(
+				Dim(logTime()) +
+					Info("Recompiling ..."),
+			)
 			Statico()
 		case err := <-w.Error:
 			return err
@@ -50,4 +53,10 @@ func handleFileChanges(w *watcher.Watcher) error {
 			return nil
 		}
 	}
+}
+
+func logTime() string {
+	return "[" + time.Now().Format(
+		"15:04:05",
+	) + "] "
 }

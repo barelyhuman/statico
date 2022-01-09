@@ -1,25 +1,64 @@
 package main
 
-type TermColorFunc func(text string) string
-
-type TermColors struct {
-	Dim   TermColorFunc
-	Bold  TermColorFunc
-	Green TermColorFunc
-	Red   TermColorFunc
-	Reset TermColorFunc
+type TermColor struct {
+	AnsiStart string
+	AnsiEnd   string
 }
 
-func colorBuilder(ansiiOpen string, ansiiClose string) func(text string) string {
-	return func(text string) string {
-		return "\x1b[" + ansiiOpen + "m" + text + "\x1b[" + ansiiClose + "m"
-	}
+type TermColorBuilder struct {
+	TermColor
 }
 
-func (t *TermColors) Init() {
-	t.Dim = colorBuilder("2", "22")
-	t.Bold = colorBuilder("1", "22")
-	t.Green = colorBuilder("32", "39")
-	t.Red = colorBuilder("31", "39")
-	t.Reset = colorBuilder("0", "0")
+func (tb *TermColorBuilder) Build(text string) string {
+	return tb.AnsiStart + text + tb.AnsiEnd
+}
+
+func (tb *TermColorBuilder) Dim() *TermColorBuilder {
+	start, end := colorBuilder("2", "22")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+func (tb *TermColorBuilder) Bold() *TermColorBuilder {
+	start, end := colorBuilder("1", "22")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+func (tb *TermColorBuilder) Green() *TermColorBuilder {
+	start, end := colorBuilder("32", "39")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+
+func (tb *TermColorBuilder) Yellow() *TermColorBuilder {
+	start, end := colorBuilder("33", "39")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+func (tb *TermColorBuilder) Red() *TermColorBuilder {
+	start, end := colorBuilder("31", "39")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+
+func (tb *TermColorBuilder) Reset() *TermColorBuilder {
+	start, end := colorBuilder("0", "0")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+
+func (tb *TermColorBuilder) Cyan() *TermColorBuilder {
+	start, end := colorBuilder("36", "39")
+	tb.AnsiStart += start
+	tb.AnsiEnd += end
+	return tb
+}
+
+func colorBuilder(ansiiOpen string, ansiiClose string) (string, string) {
+	return "\x1b[" + ansiiOpen + "m", "\x1b[" + ansiiClose + "m"
 }

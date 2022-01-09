@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -117,11 +118,38 @@ var (
 	ConfigRef           *Config
 )
 
-var termColors = &TermColors{}
+var termColors = &TermColorBuilder{}
+
+func bail(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func confirmPrompt(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
+	}
+}
 
 func main() {
 	var configFile string
-	termColors.Init()
+	initApp := flag.Bool("init", false, "Initialize the most minimal version of statico")
 	enableWatch := flag.Bool("watch", false, "Start statico in watch mode")
 	enableWatchAlias := flag.Bool("w", false, "alias `-watch`")
 	enableServe := flag.Bool("serve", false, "Enable file server")
@@ -130,6 +158,11 @@ func main() {
 	configFileFlagAlias := flag.String("c", "", "alias `-config`")
 
 	flag.Parse()
+
+	if *initApp {
+		runAppInitScript()
+		return
+	}
 
 	configFile = "./config.yml"
 
@@ -166,11 +199,23 @@ func main() {
 }
 
 func Success(text string) string {
-	return termColors.Bold(termColors.Green(text))
+	return termColors.Reset().Bold().Green().Build(text)
 }
 
 func Bullet(text string) string {
-	return termColors.Reset(termColors.Bold(text))
+	return termColors.Reset().Bold().Build(text)
+}
+
+func Info(text string) string {
+	return termColors.Reset().Cyan().Build(text)
+}
+
+func Warn(text string) string {
+	return termColors.Reset().Bold().Yellow().Build(text)
+}
+
+func Dim(text string) string {
+	return termColors.Reset().Dim().Build(text)
 }
 
 // Statico - static file and index generator
@@ -296,7 +341,8 @@ func Statico() {
 	}
 
 	fmt.Println(
-		Success("Static Files Generated to : ") + Bullet(ConfigRef.OutPath),
+		Dim(logTime()) +
+			Success("Static Files Generated to : ") + Bullet(ConfigRef.OutPath),
 	)
 }
 
@@ -472,7 +518,7 @@ func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.
 	}
 
 	if !isMarkdownFile(file) && !isHTMLFileBool {
-		fmt.Println(termColors.Dim("Skipping file, not a markdown file:"), termColors.Bold(file.Name()))
+		fmt.Println(termColors.Dim().Build("Skipping file, not a markdown file:"), termColors.Bold().Build(file.Name()))
 		return nil
 	}
 
@@ -566,6 +612,7 @@ func isInSlice(sliceToCheck []string, toSearch string) bool {
 }
 
 func ServeFiles() {
+	fmt.Println(Dim("Starting Dev Server..."))
 	fs := http.FileServer(http.Dir(ConfigRef.OutPath))
 	http.Handle("/", fs)
 
@@ -575,7 +622,7 @@ func ServeFiles() {
 		port = ConfigRef.Port
 	}
 
-	log.Println("Listening on :" + port + "...")
+	fmt.Println(Bullet(">> Listening on " + Info(":"+port)))
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal(err)

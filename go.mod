@@ -1,6 +1,6 @@
 module github.com/barelyhuman/statico
 
-go 1.15
+go 1.16
 
 require (
 	github.com/radovskyb/watcher v1.0.7 // indirect
