@@ -3,14 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"embed"
 	"flag"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"sort"
 	"strings"
 	"text/template"
@@ -120,10 +118,7 @@ var (
 	ConfigRef           *Config
 )
 
-var termColors = &TermColors{}
-
-//go:embed scripts/*
-var scripts embed.FS
+var termColors = &TermColorBuilder{}
 
 func bail(err error) {
 	if err != nil {
@@ -154,7 +149,6 @@ func confirmPrompt(s string) bool {
 
 func main() {
 	var configFile string
-	termColors.Init()
 	initApp := flag.Bool("init", false, "Initialize the most minimal version of statico")
 	enableWatch := flag.Bool("watch", false, "Start statico in watch mode")
 	enableWatchAlias := flag.Bool("w", false, "alias `-watch`")
@@ -166,24 +160,7 @@ func main() {
 	flag.Parse()
 
 	if *initApp {
-
-		if !confirmPrompt(Warn(
-			`The script will override any statico related files, 
-this includes templates and styles,
-please do not use this in an already initiatlized project, 
-Do you still want to continue?`,
-		)) {
-			return
-		}
-		bootScript, err := scripts.ReadFile("scripts/bootstrap.sh")
-
-		bail(err)
-		c := exec.Command("bash")
-		c.Stdin = strings.NewReader((string(bootScript)))
-
-		_, err = c.Output()
-		bail(err)
-		fmt.Println(Success("Statico Minimal Site Created"))
+		runAppInitScript()
 		return
 	}
 
@@ -222,16 +199,23 @@ Do you still want to continue?`,
 }
 
 func Success(text string) string {
-	return termColors.Bold(termColors.Green(text))
+	return termColors.Reset().Bold().Green().Build(text)
 }
 
 func Bullet(text string) string {
-	return termColors.Reset(termColors.Bold(text))
+	return termColors.Reset().Bold().Build(text)
+}
+
+func Info(text string) string {
+	return termColors.Reset().Cyan().Build(text)
 }
 
 func Warn(text string) string {
-	return termColors.Reset(termColors.Bold(termColors.Yellow(text)))
+	return termColors.Reset().Bold().Yellow().Build(text)
+}
 
+func Dim(text string) string {
+	return termColors.Reset().Dim().Build(text)
 }
 
 // Statico - static file and index generator
@@ -357,7 +341,8 @@ func Statico() {
 	}
 
 	fmt.Println(
-		Success("Static Files Generated to : ") + Bullet(ConfigRef.OutPath),
+		Dim(logTime()) +
+			Success("Static Files Generated to : ") + Bullet(ConfigRef.OutPath),
 	)
 }
 
@@ -533,7 +518,7 @@ func handleUnprocessedTemplate(pathPrefix string, outPathPrefix string, file os.
 	}
 
 	if !isMarkdownFile(file) && !isHTMLFileBool {
-		fmt.Println(termColors.Dim("Skipping file, not a markdown file:"), termColors.Bold(file.Name()))
+		fmt.Println(termColors.Dim().Build("Skipping file, not a markdown file:"), termColors.Bold().Build(file.Name()))
 		return nil
 	}
 
@@ -627,6 +612,7 @@ func isInSlice(sliceToCheck []string, toSearch string) bool {
 }
 
 func ServeFiles() {
+	fmt.Println(Dim("Starting Dev Server..."))
 	fs := http.FileServer(http.Dir(ConfigRef.OutPath))
 	http.Handle("/", fs)
 
@@ -636,7 +622,7 @@ func ServeFiles() {
 		port = ConfigRef.Port
 	}
 
-	log.Println("Listening on :" + port + "...")
+	fmt.Println(Bullet(">> Listening on " + Info(":"+port)))
 	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatal(err)
