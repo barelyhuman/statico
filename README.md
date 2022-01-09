@@ -18,6 +18,7 @@ I use markdown for most of my writing and really like the simplicity. This start
 - Markdown => HTML
 
 ## Documentation
+
 [Documentation](https://statico.reaper.im/) - You can find your documentation here
 
 ## Install
@@ -34,6 +35,8 @@ Usage of statico:
         alias -config
   -config string
         Config file to use
+  -init
+        Initialize the app
   -s -serve
         alias -serve
   -serve

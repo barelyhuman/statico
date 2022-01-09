@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"flag"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"text/template"
@@ -119,9 +121,19 @@ var (
 
 var termColors = &TermColors{}
 
+//go:embed scripts/*
+var scripts embed.FS
+
+func bail(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	var configFile string
 	termColors.Init()
+	initApp := flag.Bool("init", false, "Initialize the most minimal version of statico")
 	enableWatch := flag.Bool("watch", false, "Start statico in watch mode")
 	enableWatchAlias := flag.Bool("w", false, "alias `-watch`")
 	enableServe := flag.Bool("serve", false, "Enable file server")
@@ -130,6 +142,19 @@ func main() {
 	configFileFlagAlias := flag.String("c", "", "alias `-config`")
 
 	flag.Parse()
+
+	if *initApp {
+		bootScript, err := scripts.ReadFile("scripts/bootstrap.sh")
+
+		bail(err)
+		c := exec.Command("bash")
+		c.Stdin = strings.NewReader((string(bootScript)))
+
+		_, err = c.Output()
+		bail(err)
+		fmt.Println(Success("Minimal App Created"))
+		return
+	}
 
 	configFile = "./config.yml"
 
