@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+
 # create directories 
 mkdir -p public 
 mkdir -p content
@@ -159,20 +160,3 @@ echo "$pageTemplate" > templates/page.html
 echo "$metaTemplate" > templates/meta.html
 echo "$indexTemplate" > content/index.md
 echo "$styleTemplate" > public/styles.css
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

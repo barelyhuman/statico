@@ -3,11 +3,12 @@ package main
 type TermColorFunc func(text string) string
 
 type TermColors struct {
-	Dim   TermColorFunc
-	Bold  TermColorFunc
-	Green TermColorFunc
-	Red   TermColorFunc
-	Reset TermColorFunc
+	Dim    TermColorFunc
+	Bold   TermColorFunc
+	Green  TermColorFunc
+	Yellow TermColorFunc
+	Red    TermColorFunc
+	Reset  TermColorFunc
 }
 
 func colorBuilder(ansiiOpen string, ansiiClose string) func(text string) string {
@@ -22,4 +23,5 @@ func (t *TermColors) Init() {
 	t.Green = colorBuilder("32", "39")
 	t.Red = colorBuilder("31", "39")
 	t.Reset = colorBuilder("0", "0")
+	t.Yellow = colorBuilder("33", "39")
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"embed"
 	"flag"
@@ -130,6 +131,27 @@ func bail(err error) {
 	}
 }
 
+func confirmPrompt(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response == "y" || response == "yes" {
+			return true
+		} else if response == "n" || response == "no" {
+			return false
+		}
+	}
+}
+
 func main() {
 	var configFile string
 	termColors.Init()
@@ -144,6 +166,15 @@ func main() {
 	flag.Parse()
 
 	if *initApp {
+
+		if !confirmPrompt(Warn(
+			`The script will override any statico related files, 
+this includes templates and styles,
+please do not use this in an already initiatlized project, 
+Do you still want to continue?`,
+		)) {
+			return
+		}
 		bootScript, err := scripts.ReadFile("scripts/bootstrap.sh")
 
 		bail(err)
@@ -152,7 +183,7 @@ func main() {
 
 		_, err = c.Output()
 		bail(err)
-		fmt.Println(Success("Minimal App Created"))
+		fmt.Println(Success("Statico Minimal Site Created"))
 		return
 	}
 
@@ -196,6 +227,11 @@ func Success(text string) string {
 
 func Bullet(text string) string {
 	return termColors.Reset(termColors.Bold(text))
+}
+
+func Warn(text string) string {
+	return termColors.Reset(termColors.Bold(termColors.Yellow(text)))
+
 }
 
 // Statico - static file and index generator
