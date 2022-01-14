@@ -62,3 +62,30 @@ func (tb *TermColorBuilder) Cyan() *TermColorBuilder {
 func colorBuilder(ansiiOpen string, ansiiClose string) (string, string) {
 	return "\x1b[" + ansiiOpen + "m", "\x1b[" + ansiiClose + "m"
 }
+
+// CUSTOM collection of built colors
+
+func Success(text string) string {
+	ref := &TermColorBuilder{}
+	return ref.Reset().Bold().Green().Build(text)
+}
+
+func Bullet(text string) string {
+	ref := &TermColorBuilder{}
+	return ref.Reset().Bold().Build(text)
+}
+
+func Info(text string) string {
+	ref := &TermColorBuilder{}
+	return ref.Reset().Cyan().Build(text)
+}
+
+func Warn(text string) string {
+	ref := &TermColorBuilder{}
+	return ref.Reset().Bold().Yellow().Build(text)
+}
+
+func Dim(text string) string {
+	ref := &TermColorBuilder{}
+	return ref.Reset().Dim().Build(text)
+}
