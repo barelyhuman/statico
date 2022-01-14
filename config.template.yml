@@ -6,7 +6,6 @@ site:
 
 # Names of the tempaltes to be used for each scenario
 template_names:
-  post_template: "blogPostHTML"
   post_index_template: "blogIndexHTML"
   page_template: "simplePageHTML"
   rss_template: "rssTemplate"
@@ -22,10 +21,6 @@ public_folder: "./public"
 # uses `post_template` for the actual page content
 indexed_folders:
   - devlogs
-
-# RSS Options, generates RSS for all the posts from indexed_folders
-generate_rss: true
-rss_out_path: "./out/blog.xml"
 
 # CLI Options, change the serving port
 port: 3000
