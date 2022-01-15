@@ -50,6 +50,9 @@ pageTemplate=$(cat << EOF
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <h1>
+      {{.Meta.title}}
+    </h1>
     <main>{{.Content}}</main>
   </body>
 </html>
@@ -86,8 +89,12 @@ EOF
 )
 
 indexTemplate=$(cat <<EOF
-# Statico
+---
+title: Statico
+---
+
 Minimal Boostrapped Template
+
 EOF
 )
 
