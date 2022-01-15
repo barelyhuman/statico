@@ -310,12 +310,17 @@ func (app *Statico) CreateIndexFiles() {
 		}
 
 		sort.Slice(filesMeta, func(i, j int) bool {
+			dateOneString := InterfaceToString(filesMeta[j]["date"])
+			dateTwoString := InterfaceToString(filesMeta[i]["date"])
+			if dateOneString == "" || dateTwoString == "" {
+				return false
+			}
 			dateOne, err := parseStringToDate(
-				InterfaceToString(filesMeta[j]["date"]),
+				dateOneString,
 			)
 			bail(err)
 			dateTwo, err := parseStringToDate(
-				InterfaceToString(filesMeta[i]["date"]),
+				dateTwoString,
 			)
 			bail(err)
 			return dateOne.Time.Before(dateTwo.Time)
