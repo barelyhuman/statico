@@ -25,6 +25,12 @@ I use markdown for most of my writing and really like the simplicity. This start
 
 - You can download the binaries from the [releases](/releases) page for your specific system and add it to a directory that is in your `PATH` variables.
 
+or you can use goblin 
+
+```sh
+curl -sf https://goblin.reaper.im/github.com/barelyhuman/statico | sh
+```
+
 ## Usage
 
 ```sh
